@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Windows.Forms; // Dosya diyaloğu için eklendi
 
 namespace ConsoleApp3
 {
@@ -17,55 +19,175 @@ namespace ConsoleApp3
         }
     }
 
+    /// <summary>
+    /// A* algoritması için isimlendirilmiş bir ağırlık yapılandırmasını temsil eder.
+    /// </summary>
+    public class AgirlikAyari
+    {
+        public string Isim { get; }
+        public double Deger { get; }
+
+        public AgirlikAyari(string isim, double deger)
+        {
+            Isim = isim;
+            Deger = deger;
+        }
+    }
+
     internal class AnaProgram
     {
+        // [STAThread] özniteliği, OpenFileDialog gibi Windows Formları
+        // bileşenlerinin doğru çalışması için gereklidir.
+        [STAThread]
         static void Main(string[] args)
         {
-            
-            int dugumSayisi = 6;
-            int baslangicDugumu = 0; // Başlangıç düğümü
-            int hedefDugumu = 4;     // Hedef düğümü
-
-            double[,] komsulukMatrisi = new double[,]
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            while (true)
             {
-               //komşuluk matrisi (Maliyet)
-                 { 0,   8,   3,   6,   0,   0 },
-                 { 8,   0,   4,   5,   5,   7 },
-                 { 3,   4,   0,   0,   0,   0 },
-                 { 6,   5,   0,   0,   0,   6 },
-                 { 0,   5,   0,   0,   0,   0 },
-                 { 0,   7,   0,   6,   0,   0 }
-            };
+                Console.WriteLine("\nHarita dosyası yüklemek için 'dy' yazıp Enter'a basın.");
+                Console.WriteLine("Programdan çıkmak için 'exit' yazıp Enter'a basın.");
+                string userInput = Console.ReadLine().Trim().ToLower();
 
-            // Düğüm koordinatları 
-            Point[] dugumKoordinatlari = new Point[]
-            {
-                new Point(28.7, 41.2, 0), new Point(33.0, 40.1, 0), new Point(27.1, 38.2, 0),
-                new Point(30.8, 36.9, 0), new Point(39.7, 40.9, 0), new Point(40.2, 37.9, 0)
-            };
+                if (userInput == "exit")
+                {
+                    break; // Döngüyü sonlandır ve programdan çık.
+                }
 
-            // Dijkstra algoritması testi
-            Console.WriteLine("--- Dijkstra Algoritması ---");
-            DijkstraAlgoritmasi dijkstra = new DijkstraAlgoritmasi(dugumSayisi);
-            dijkstra.Calistir(komsulukMatrisi, baslangicDugumu);
-            dijkstra.SonuclariYazdir();
+                if (userInput == "dy")
+                {
+                    string mapFilePath = SelectMapFile();
 
-            Console.WriteLine("\n--- Ağırlıklı A* Algoritma Testleri ---");
+                    if (string.IsNullOrEmpty(mapFilePath))
+                    {
+                        Console.WriteLine("Dosya seçilmedi. Lütfen tekrar deneyin.");
+                        continue; // Döngünün başına dön.
+                    }
 
-            // Ağırlıklı A* algoritması için w değerleri
-            List<double> testAgirliklari = new List<double> { 0.5, 1.0, 2.0 };
-
-            // Bir döngü ile her bir ağırlık için algoritmayı çalıştırıyoruz.
-            foreach (var agirlik in testAgirliklari)
-            {
-                AStarAlgorithm astar = new AStarAlgorithm(dugumSayisi, dugumKoordinatlari, agirlik);
-                astar.Calistir(komsulukMatrisi, baslangicDugumu, hedefDugumu);
-                astar.SonuclariYazdir();
+                    // Dosya seçildiyse, haritayı işle.
+                    ProcessMapFile(mapFilePath);
+                }
+                else
+                {
+                    Console.WriteLine("Geçersiz komut. Lütfen 'dy' veya 'exit' yazın.");
+                }
             }
 
-            // Programın sonlandırılması için kullanıcıdan giriş bekleniyor.
-            Console.WriteLine("\nProgramı sonlandırmak için bir tuşa basın");
-            Console.ReadKey();
+            Console.WriteLine("\nProgram sonlandırıldı.");
+        }
+
+        /// <summary>
+        /// Kullanıcının bir harita dosyası seçmesi için bir dosya seçim diyaloğu açar.
+        /// </summary>
+        /// <returns>Seçilen dosyanın tam yolu veya seçim iptal edilirse null.</returns>
+        private static string SelectMapFile()
+        {
+            using (var openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Title = "Harita Dosyası Seçin (.osm, .xodr)";
+                openFileDialog.Filter = "Harita Dosyaları (*.osm;*.xodr)|*.osm;*.xodr|Tüm Dosyalar (*.*)|*.*";
+                openFileDialog.FilterIndex = 1;
+                openFileDialog.RestoreDirectory = true;
+
+                var result = openFileDialog.ShowDialog();
+                if (result == DialogResult.OK)
+                {
+                    return openFileDialog.FileName;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Seçilen harita dosyasını işler, grafı oluşturur ve algoritmaları çalıştırır.
+        /// </summary>
+        /// <param name="mapFilePath">İşlenecek harita dosyasının yolu.</param>
+        private static void ProcessMapFile(string mapFilePath)
+        {
+            try
+            {
+                Console.WriteLine($"\n'{Path.GetFileName(mapFilePath)}' dosyasından graf verisi okunuyor...");
+                GraphData graph = MapParser.Parse(mapFilePath);
+                Console.WriteLine($"Graf başarıyla oluşturuldu. Düğüm sayısı: {graph.NodeCount}");
+
+                if (graph.NodeCount < 2)
+                {
+                    Console.WriteLine("Algoritmayı çalıştırmak için graf yeterli düğüme sahip değil.");
+                    return;
+                }
+
+                // Kullanıcıdan başlangıç ve bitiş düğümleri (1-based) alınır
+                int baslangicDugumu = GetNodeInput($"Başlangıç düğümünü girin (1 - {graph.NodeCount}): ", graph.NodeCount) - 1;
+                int hedefDugumu = GetNodeInput($"Bitiş düğümünü girin (1 - {graph.NodeCount}): ", graph.NodeCount) - 1;
+
+                Console.WriteLine($"\n--- Algoritmalar Çalıştırılıyor (Başlangıç: {baslangicDugumu + 1}, Hedef: {hedefDugumu + 1}) ---");
+
+                // Dijkstra Algoritması (sadece seçilen hedefe odaklı çıktı)
+                DijkstraAlgoritmasi dijkstra = new DijkstraAlgoritmasi(graph.NodeCount);
+                dijkstra.Calistir(graph.AdjacencyMatrix, baslangicDugumu);
+                int[] dijkstraPath = GetPathFromDijkstra(dijkstra, hedefDugumu);
+                dijkstra.SonuclariYazdir(hedefDugumu);
+
+                // Ağırlıklı A* Algoritması Testleri
+                List<AgirlikAyari> testSenaryolari = new List<AgirlikAyari>
+                {
+                    new AgirlikAyari("Hızlı Rota (Heuristic Odaklı)", 0.5),
+                    new AgirlikAyari("Dengeli Rota (Standart A*)", 1.0),
+                    new AgirlikAyari("Güvenli Rota (Maliyet Odaklı)", 2.0)
+                };
+
+                foreach (var senaryo in testSenaryolari)
+                {
+                    Console.WriteLine($"\n--- Test Senaryosu: '{senaryo.Isim}' ---");
+                    AStarAlgorithm astar = new AStarAlgorithm(graph.NodeCount, graph.NodeCoordinates, senaryo.Deger);
+                    astar.Calistir(graph.AdjacencyMatrix, baslangicDugumu, hedefDugumu);
+                    astar.SonuclariYazdir();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Bir hata oluştu: {ex.Message}");
+            }
+        }
+
+        // Dijkstra yolunu çıkar
+        private static int[] GetPathFromDijkstra(DijkstraAlgoritmasi dijkstra, int hedef)
+        {
+            var path = new List<int>();
+            var onceki = typeof(DijkstraAlgoritmasi).GetField("oncekiDugumler", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(dijkstra) as int[];
+            int node = hedef;
+            while (node != -1)
+            {
+                path.Insert(0, node);
+                node = onceki[node];
+            }
+            return path.ToArray();
+        }
+        // A* yolunu çıkar
+        private static int[] GetPathFromAStar(AStarAlgorithm astar, int hedef)
+        {
+            var path = new List<int>();
+            var onceki = typeof(AStarAlgorithm).GetField("oncekiDugumler", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(astar) as int[];
+            int node = hedef;
+            while (node != -1)
+            {
+                path.Insert(0, node);
+                node = onceki[node];
+            }
+            return path.ToArray();
+        }
+
+        private static int GetNodeInput(string prompt, int maxNode)
+        {
+            int node;
+            do
+            {
+                Console.Write(prompt);
+                string input = Console.ReadLine();
+                if (int.TryParse(input, out node) && node >= 1 && node <= maxNode)
+                    return node;
+                Console.WriteLine($"Geçersiz giriş. 1 ile {maxNode} arasında bir sayı girin.");
+            } while (true);
         }
     }
 }

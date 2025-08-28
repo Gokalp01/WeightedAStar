@@ -25,7 +25,7 @@ namespace ConsoleApp3
         public AStarAlgorithm(int dugumSayisi, Point[] koordinatlar, double agirlik = 1.0)
         {
             if (agirlik < 0) throw new ArgumentOutOfRangeException(nameof(agirlik), "Aðýrlýk negatif olamaz.");
-            
+
             this.dugumSayisi = dugumSayisi;
             this.dugumKoordinatlari = koordinatlar;
             this.agirlik = agirlik;
@@ -38,7 +38,7 @@ namespace ConsoleApp3
 
             Point fromPoint = dugumKoordinatlari[from];
             Point toPoint = dugumKoordinatlari[to];
-            
+
             double dx = fromPoint.X - toPoint.X;
             double dy = fromPoint.Y - toPoint.Y;
             double dz = fromPoint.Z - toPoint.Z;
@@ -124,7 +124,7 @@ namespace ConsoleApp3
 
             Console.WriteLine($"\nA* Testi (Aðýrlýk: {this.agirlik})");
             Console.WriteLine("=================================");
-            
+
             if (gScore[hedefDugumu] == double.MaxValue)
             {
                 Console.WriteLine($"Hedef Düðüm: {hedefDugumu + 1} -> Ulaþýlamýyor");

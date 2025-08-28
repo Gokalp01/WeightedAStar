@@ -104,7 +104,7 @@ namespace ConsoleApp3
                     continue;
                 }
                 Console.Write($"{mesafeler[i]} \t\t Yol: ");
-                
+
                 // Yolu yeniden oluþturmak için hedef düðümden geriye doðru gidilir.
                 Stack<int> yol = new Stack<int>();
                 int mevcutDugum = i;
@@ -124,6 +124,40 @@ namespace ConsoleApp3
                 }
                 Console.WriteLine();
             }
+        }
+
+        /// Sadece belirli bir hedef düðüm için sonucu yazdýrýr
+        public void SonuclariYazdir(int hedefDugum)
+        {
+            if (mesafeler == null || oncekiDugumler == null)
+            {
+                Console.WriteLine("Calistir() metodunu çaðýrmayý unutma.");
+                return;
+            }
+            Console.WriteLine($"\nDijkstra Algoritmasý Sonucu (Baþlangýç: {baslangicDugumu + 1}, Hedef: {hedefDugum + 1})");
+            Console.WriteLine("=================================");
+            Console.Write($"Maliyet: ");
+            if (mesafeler[hedefDugum] == double.MaxValue)
+            {
+                Console.WriteLine("Ulaþýlamýyor");
+                return;
+            }
+            Console.Write($"{mesafeler[hedefDugum]} \t Yol: ");
+            Stack<int> yol = new Stack<int>();
+            int mevcutDugum = hedefDugum;
+            while (mevcutDugum != -1)
+            {
+                yol.Push(mevcutDugum);
+                mevcutDugum = oncekiDugumler[mevcutDugum];
+            }
+            bool ilk = true;
+            while (yol.Count > 0)
+            {
+                if (!ilk) Console.Write(" -> ");
+                Console.Write(yol.Pop() + 1);
+                ilk = false;
+            }
+            Console.WriteLine();
         }
     }
 }
