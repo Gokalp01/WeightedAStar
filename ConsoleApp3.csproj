@@ -45,9 +45,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AStarAlgorithm.cs" />
+    <Compile Include="ConsoleApp3\Parsers\OsmParser.cs" />
+    <Compile Include="ConsoleApp3\Parsers\XodrParser.cs" />
+    <Compile Include="ConsoleApp3\Utils\GeoUtils.cs" />
     <Compile Include="DijkstraAlgorithm.cs" />
     <Compile Include="GraphData.cs" />
-    <Compile Include="MapParser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

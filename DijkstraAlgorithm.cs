@@ -54,7 +54,7 @@ namespace ConsoleApp3
                 for (int v = 0; v < dugumSayisi; v++)
                 {
                     double agirlik = komsulukMatrisi[u, v];
-                    if (!ziyaretEdildi[v] && agirlik != 0 && mesafeler[u] != double.MaxValue &&
+                    if (!ziyaretEdildi[v] && agirlik != double.PositiveInfinity && mesafeler[u] != double.MaxValue &&
                         mesafeler[u] + agirlik < mesafeler[v])
                     {
                         // Eðer daha kýsa bir yol bulunduysa, mesafeyi güncelle ve yolu kaydet.
