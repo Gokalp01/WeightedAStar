@@ -9,6 +9,7 @@ namespace ConsoleApp3
     {
         public double[,] AdjacencyMatrix { get; }
         public Point[] NodeCoordinates { get; }
+       
         public int NodeCount => NodeCoordinates?.Length ?? 0;
         // Orijinal dosyadaki ID'leri (örn: OSM node ID, XODR junction ID) dizi indeksine eşler.
         public Dictionary<string, int> NodeIdToIndexMap { get; }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Windows.Forms; // Dosya diyaloğu için eklendi
+using ConsoleApp3.Parsers;
 
 namespace ConsoleApp3
 {
@@ -53,7 +54,7 @@ namespace ConsoleApp3
                 {
                     break; // Döngüyü sonlandır ve programdan çık.
                 }
-
+                
                 if (userInput == "dy")
                 {
                     string mapFilePath = SelectMapFile();
@@ -107,7 +108,7 @@ namespace ConsoleApp3
             try
             {
                 Console.WriteLine($"\n'{Path.GetFileName(mapFilePath)}' dosyasından graf verisi okunuyor...");
-                GraphData graph = MapParser.Parse(mapFilePath);
+                GraphData graph = ParseMap(mapFilePath);
                 Console.WriteLine($"Graf başarıyla oluşturuldu. Düğüm sayısı: {graph.NodeCount}");
 
                 if (graph.NodeCount < 2)
@@ -147,6 +148,26 @@ namespace ConsoleApp3
             catch (Exception ex)
             {
                 Console.WriteLine($"Bir hata oluştu: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Verilen dosya yolundaki harita dosyasını uzantısına göre ayrıştırır.
+        /// </summary>
+        private static GraphData ParseMap(string filePath)
+        {
+            string extension = Path.GetExtension(filePath).ToLower();
+            
+            switch (extension)
+            {
+                case ".osm":
+                    var osmParser = new OsmParser();
+                    return osmParser.Parse(filePath);
+                case ".xodr":
+                    var xodrParser = new XodrParser();
+                    return xodrParser.Parse(filePath);
+                default:
+                    throw new NotSupportedException($"Desteklenmeyen dosya uzantısı: {extension}. Yalnızca .osm ve .xodr desteklenir.");
             }
         }
 

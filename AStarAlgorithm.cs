@@ -93,7 +93,7 @@ namespace ConsoleApp3
                 for (int neighbor = 0; neighbor < dugumSayisi; neighbor++)
                 {
                     double yolMaliyeti = komsulukMatrisi[current, neighbor];
-                    if (yolMaliyeti > 0)
+                    if (yolMaliyeti != double.PositiveInfinity && yolMaliyeti > 0)
                     {
                         if (closedSet[neighbor]) continue;
 
@@ -107,10 +107,8 @@ namespace ConsoleApp3
                         {
                             continue;
                         }
-                        // Eðer daha kýsa bir yol bulunduysa, gScore ve fScore deðerlerini güncelle.
                         oncekiDugumler[neighbor] = current;
                         gScore[neighbor] = tentativeGScore;
-                        // f skoru, g skoru ile aðýrlýklandýrýlmýþ h skorunun toplamýdýr.
                         fScore[neighbor] = gScore[neighbor] + (agirlik * Heuristic(neighbor, hedefDugumu));
                     }
                 }
